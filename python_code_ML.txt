@@ -1,0 +1,151 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# Two classifer model were demonstrated on Dataset
+# If using SVC() classifer wait for some time because it takes 2-6 minutes to train and predict the results
+# threfore svc() part is under comment
+
+# second classifer is DecisionTreeClassifier which work best on dataset
+
+
+
+df=pd.read_csv("consumer.csv",nrows=1000)
+print(df.head())
+#----------LabelEncoder------------
+from sklearn.preprocessing import LabelEncoder
+le=LabelEncoder()
+df['behaviour'] = le.fit_transform(df['behaviour'])
+
+print("-------------DATASET ANALYSIS------------")
+print(df.describe())
+
+from sklearn.metrics import accuracy_score
+X=df[['price','frequency','quantity','variant','login']]
+Y=df['behaviour']
+
+print("\n====================DATASET VISUALIZATION======================\n")
+plt.scatter(X.iloc[:400,0],le.inverse_transform(Y.iloc[:400]),s=60,edgecolors='black',c='white')
+plt.title("Price Sample Distribution")
+plt.xlabel("Price"),plt.ylabel("Behavoiur")
+plt.show()
+
+plt.scatter(X.iloc[:400,1],le.inverse_transform(Y.iloc[:400]),s=60,c='red')
+plt.title("Frequency Sample Distribution")
+plt.xlabel("Frequency of Purchase"),plt.ylabel("Behavoiur")
+plt.show()
+
+plt.scatter(X.iloc[:400,2],le.inverse_transform(Y.iloc[:400]),s=60,c='blue')
+plt.title("Quantity Sample Distribution")
+plt.xlabel("No. of Quantity"),plt.ylabel("Behavoiur")
+plt.show()
+
+plt.scatter(X.iloc[:400,3],le.inverse_transform(Y.iloc[:400]),s=60,c='lightgreen',edgecolors='red')
+plt.title("Variant Sample Distribution")
+plt.xlabel("No. of Variants"),plt.ylabel("Behavoiur")
+plt.show()
+
+plt.scatter(X.iloc[:400,4],le.inverse_transform(Y.iloc[:400]),s=60,edgecolors='black',c='yellow')
+plt.title("Login Sample Distribution")
+plt.xlabel("No. of Logins"),plt.ylabel("Behavoiur")
+plt.show()
+
+
+from sklearn.model_selection import train_test_split
+xtrain, xtest, ytrain, ytest = train_test_split(X,Y,test_size=0.3)
+
+
+#------------C-SUPPORT VECTOR CLASSIFICATION-----------------
+#-------------------Takes approx 2-5 min to compute -------------------
+'''
+xtr,xts, ytr,yts = train_test_split(X[:50],Y[:50],test_size=0.1)
+print(xtr.shape,ytr.shape,xts.shape)
+
+from sklearn.svm import SVC
+svc=SVC(C=1, kernel='linear',decision_function_shape='ovr',gamma='auto')
+svc.fit(xtr,ytr)
+rel=svc.predict(xts)
+print("Correct samples/ predicted samples ", len(yts),"/",accuracy_score(yts,rel,normalize=False))
+print("Accuracy of SVC : ",accuracy_score(yts,rel))
+print("Support Vector",svc.support_vectors_)
+print("SVC Classes ",svc.classes_)
+print("SVC Supports ",svc.n_support_)
+
+#--------SVC Output Plot-------------
+
+#print(np.unique(yts))
+
+plt.scatter(xts.iloc[:,0],yts)
+plt.scatter(xts.iloc[:,1],yts)
+plt.scatter(xts.iloc[:,2],yts)
+plt.scatter(xts.iloc[:,3],yts)
+plt.scatter(xts.iloc[:,4],yts)
+plt.plot(rel)
+plt.title("SVC predicted Line over train data")
+plt.ylim(-0.5,np.max(np.unique(yts))+1)
+plt.show()
+
+plt.scatter(xts.iloc[:,0],yts)
+plt.scatter(xts.iloc[:,1],yts)
+plt.scatter(xts.iloc[:,2],yts)
+plt.scatter(xts.iloc[:,3],yts)
+plt.scatter(xts.iloc[:,4],yts)
+plt.plot(yts,c='green')
+plt.title("Actual Line over train data")
+plt.ylim(-0.5,np.max(np.unique(yts))+1)
+plt.show()
+'''
+
+
+#-----------This method also take lot of time to compute the results
+'''
+from sklearn.ensemble import AdaBoostClassifier
+adb=AdaBoostClassifier(base_estimator=svc,n_estimators=3,learning_rate=1,algorithm='SAMME')
+adb.fit(xtrain,ytrain)
+adb_res=adb.predict(xtest)
+print("AdaBoostClassifier Accuracy =",accuracy_score(ytest,adb_res))
+'''
+
+
+
+#---------------DECISSION TREE CLASSIFIER-----------------
+#---------DecisionTreeClassifier Without HyperParameter tuning     
+from sklearn.tree import DecisionTreeClassifier
+dtc=DecisionTreeClassifier(criterion='gini',splitter='best', min_samples_split=2)
+dtc.fit(xtrain,ytrain)
+pred_dtc = dtc.predict(xtest)
+print("Correctly predicted / Total samples = ",accuracy_score(ytest,pred_dtc,normalize=False),"/",len(ytest))
+print("DecisionTreeClassifier Accuracy",accuracy_score(ytest,pred_dtc))
+
+#-----Decision tree Plot---------
+from sklearn import tree
+# tree plot is so big , size can be controlled using figsize()
+print("\n---------------DecissionTreeClassifier Splits Graph-----------------------\n")
+plt.figure(figsize=(15,8),dpi=200)
+tree.plot_tree(dtc,filled=False,rotate=False,fontsize=5,feature_names=['price','frequency','quantity','variant','login'])
+plt.show()
+#generate classification report of Decission tree 
+print("\n-------------DecissionTreeClassifer Report------------------\n")
+text = tree.export_text(dtc,feature_names=['price','frequency','quantity','variant','login'],spacing=3,decimals=2,show_weights=False)
+print(text)    
+
+
+
+#-HyperParamer Optimization for DecisionTreeClassifier on criterion and splitter
+print("\n--------------Output after Hyperparameter Optimization------------------\n")
+from sklearn.model_selection import GridSearchCV
+ds=GridSearchCV(estimator=dtc, param_grid=dict(criterion=['gini','entropy'],splitter=['best','random']),cv=5,iid=False)
+ds.fit(xtrain,ytrain)
+res=ds.predict(xtest)
+print("Correctly predicted / Total samples = ",accuracy_score(ytest,res,normalize=False),"/",len(ytest))
+print("DecisionTreeClassifier Accuracy",accuracy_score(ytest,res))
+
+
+
+
+
+
+
+
+
